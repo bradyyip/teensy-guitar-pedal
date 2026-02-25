@@ -1,0 +1,7 @@
+DAC Pinout:
+Vin - 3.3 V
+GND - GND (you should know this)
+SCK - GND (tells module to take clk input from teensy)
+LCK - 20 (look at teensy 4.0 pinout reference)
+BCK -21
+DIN - 7
