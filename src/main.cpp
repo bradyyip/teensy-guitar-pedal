@@ -9,29 +9,118 @@ float vol;
 bool button_state = false;
 bool fx_on = false;
 
+//fx on and off var
+bool chorus_on = false;
+bool delay_on = false;
+bool reverb_on = false;
+bool btcrsh_on = false;
+
+//after designing pcb fx control read pins will be decided
+int btcrsh_enable_pin;
+int chorus_enable_pin;
+int delay_enable_pin;
+int reverb_enable_pin;
+
 //testing out the fx
-AudioEffectReverb reverb1;
-AudioEffectChorus chorus1;
+AudioEffectFreeverb reverb;
+AudioEffectChorus chorus;
+AudioEffectChorus delay;
+AudioEffectChorus biquad;
+AudioEffectBitcrusher btcrsh;
 
 //establish mixer to change around the fx chain
-AudioMixer4 mixer1;
+AudioMixer4 btcrsh_mix;
+AudioMixer4 chorus_mix;
+AudioMixer4 delay_mix;
+AudioMixer4 reverb_mix;
 
 //testing output and dac
+
+//signal chain 1
 AudioSynthWaveformSine sine1;
-AudioOutputI2S i2s1;
-AudioConnection patchCord1(sine1, 0, mixer1, 0);
-AudioConnection patchCord2(sine1, chorus1);
-AudioConnection patchCord3(chorus1, 0, mixer1, 1);
-AudioConnection patchCord4(sine1, reverb1);
-AudioConnection patchCord5(reverb1, 0, mixer1, 2);
-AudioConnection patchCord6(mixer1, 0, i2s1, 0);
 
-// AudioConnection patchCord1(sine1, chorus1);
-// AudioConnection patchCord2(chorus1, flange1);
-// AudioConnection patchCord3(flange1, 0, i2s1, 0);
-// AudioConnection patchCord4(flange1, 0, i2s1, 1);
+AudioInputI2S i2s1_in; 
 
-//toggle reverb func
+//each fx has a mxr after it to control off and on or to mix the dry and wet signal
+//mxr ch 1 is wet and ch 0 is dry
+//btcrsh mix
+AudioConnection patchCord1(i2s1_in, 0, btcrsh, 0);
+AudioConnection patchCord2(i2s1_in, 0, btcrsh_mix, 0);
+AudioConnection patchCord3(btcrsh, 0, btcrsh_mix, 1);
+
+//chorus mix
+AudioConnection patchCord4(btcrsh_mix, 0, chorus, 0);
+AudioConnection patchCord5(btcrsh_mix, 0, chorus_mix, 0);
+AudioConnection patchCord6(chorus, 0, chorus_mix, 1);
+
+//delay mix
+AudioConnection patchCord7(chorus_mix, 0, delay, 0);
+AudioConnection patchCord8(chorus_mix, 0, delay_mix, 0);
+AudioConnection patchCord9(delay, 0, delay_mix, 1);
+
+//reverb mix
+AudioConnection patchCord10(delay_mix, 0, reverb, 0);
+AudioConnection patchCord11(delay_mix, 0, reverb_mix, 0);
+AudioConnection patchCord12(reverb, 0, reverb_mix, 1);
+
+//final output
+AudioConnection patchCord13(reverb_mix, 0, i2s1_out, 0);
+
+AudioOutputI2S i2s1_out;
+
+//functions to enable or disable fx
+
+//read the btcrsh enable pin
+bool btcrsh_enable_read(int btcrsh_enable_pin) {
+
+  if (digitalRead(btcrsh_enable_pin) == HIGH) {
+    btcrsh_on = true;
+  } else {
+    btcrsh_on = false;
+  }
+
+  return btcrsh_on;
+}
+
+//read chorus enable pin
+bool chorus_enable_read(int chorus_enable_pin) {
+
+  if (digitalRead(chorus_enable_pin) == HIGH) {
+    chorus_on = true;
+  } else {
+    chorus_on = false;
+  }
+
+  return chorus_on;
+}
+
+//read delay enable pin
+bool delay_enable_read(int delay_enable_pin) {
+
+  if (digitalRead(delay_enable_pin) == HIGH) {
+    delay_on = true;
+  } else {
+    delay_on = false;
+  }
+
+  return delay_on;
+}
+
+//read reverb enable pin
+bool reverb_enable_read(int reverb_enable_pin) {
+
+  if (digitalRead(reverb_enable_pin) == HIGH) {
+    reverb_on = true;
+  } else {
+    reverb_on = false;
+  }
+
+  return reverb_on;
+}
+
+//fx control functions
+
+
 
 
 void setup() {
@@ -42,29 +131,28 @@ void setup() {
   sine1.frequency(440);
   sine1.amplitude(0.2);
 
-  reverb1.reverbTime(0.01);
+  reverb.roomsize(0.5);
 
   //enable chorus
   short chorusBuffer[2048];
-  chorus1.begin(chorusBuffer, 2048, 2);
+  chorus.begin(chorusBuffer, 2048, 2);
 
-  //reverb control
-  pinMode(11, INPUT);
+  //btcrsh enable 
+  pinMode(btcrsh_enable_pin, INPUT);
+
+  //chorus enable
+  pinMode(chorus_enable_pin, INPUT);
+
+  //delay enable
+  pinMode(delay_enable_pin, INPUT);
+
+  //reverb enable
+  pinMode(reverb_enable_pin, INPUT);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  delay(100);
 
-  //read the button state
-  button_state = digitalRead(11);
+  //check if fx are on
 
-  //if the button is pressed, turn on the fx
-  if (button_state == HIGH) {
-    Serial.println("Button Pressed");
-    chorus1.voices(5);
-  } else {
-    chorus1.voices(0);
-  }
   
 }
